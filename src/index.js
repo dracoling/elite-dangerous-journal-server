@@ -5,18 +5,18 @@ const fs = require('fs');
 const path = require('path');
 const { createServer } = require('http');
 
-// package.json for version number and such
-const packageJSON = require('../package.json');
-
 // npm module imports
 const WebSocket = require('ws');
 const zeroconf = require('bonjour')();
 const dir = require('node-dir');
 const chokidar = require('chokidar');
 const moment = require('moment');
-const chalk = require('chalk');
-const uuid = require('uuid/v1');
+const chalk = require('ansi-colors');
+const { v1: uuid } = require('uuid');
 const { merge, omit, isNumber } = require('lodash');
+
+// package.json for version number and such
+const packageJSON = require('../package.json');
 
 // utilities
 const { formatClientName } = require('./utilities');
@@ -24,7 +24,6 @@ const { formatClientName } = require('./utilities');
 // configuration
 const CONFIG = require('./defaults');
 const { EVENT_FOR_COMMANDER_NAME, ANCILLARY_FILES } = require('./constants');
-
 
 /**
  * Creates a WebSocket server that broadcasts Elite Dangerous Journal Events
@@ -366,8 +365,9 @@ class EliteDangerousJournalServer {
             }
 
             return this.websocketError(socket, invalidPayload, true);
+          }
           // if this is a subscription message
-          } else if (type === subscriptions.messageType && subscriptions.enabled) {
+          if (type === subscriptions.messageType && subscriptions.enabled) {
             // get client name from socket if it exists
             const { journalServerClientName: clientName } = socket;
 
@@ -487,11 +487,12 @@ class EliteDangerousJournalServer {
 
     // merge custom headers with server headers and payload
     let send;
+    const filler = {};
 
     if (suppressHeaders) {
-      send = Object.assign({}, { payload });
+      send = Object.assign(filler, { payload });
     } else {
-      send = Object.assign({}, this.config.headers, journalServerHeaders, { payload });
+      send = Object.assign(filler, this.config.headers, journalServerHeaders, { payload });
     }
 
     // stringify so we are just sending a String to client
@@ -577,14 +578,13 @@ class EliteDangerousJournalServer {
       try {
         const parsedEvent = JSON.parse(fs.readFileSync(filepath, 'utf-8'));
         if (parsedEvent) {
-          this.broadcast(Object.assign({}, parsedEvent, this.ancillaryFiles[baseName]));
+          this.broadcast(Object.assign(parsedEvent, this.ancillaryFiles[baseName]));
         }
-      }
-      catch (err) {
+      } catch (err) {
         /* If the file is in the middle of being flushed to disk, we can
          * get 'SyntaxError: Unexpected end of JSON input' in JSON.parse().
          */
-        if (err.name != 'SyntaxError') {
+        if (err.name !== 'SyntaxError') {
           throw err;
         }
         console.log(`${chalk.red('Ignoring error:')} ${chalk.magenta(err)}`);
@@ -602,7 +602,7 @@ class EliteDangerousJournalServer {
     // TODO: Find a better way to do this without having to read whole file
     const lines = fs.readFileSync(this.journals[0], 'utf-8').split('\n');
 
-    return lines.filter(item => item.trim());
+    return lines.filter((item) => item.trim());
   }
 
   /**
@@ -672,7 +672,7 @@ class EliteDangerousJournalServer {
       // filter to make sure we are only looking at Journal files
       // this also has the added benefit of letting us sort the filtered Array
       // without mutating the original Array of files
-      .filter(file => watcher.fileRegEx.test(path.basename(file)))
+      .filter((file) => watcher.fileRegEx.test(path.basename(file)))
       // sort by datestamp and part to make sure we have the most recent Journal
       .sort((a, b) => {
         // split Journal names so we can look at datestamp and part as necessary
@@ -716,7 +716,6 @@ class EliteDangerousJournalServer {
     }
   }
 
-
   /**
    * Retrieves the header from the provided Journal content and returns headerless
    * Journal content Array
@@ -729,7 +728,7 @@ class EliteDangerousJournalServer {
     this.currentHeader = JSON.parse(lines.shift(0, 1));
 
     // increment our line counter so we know our place in the Journal content
-    this.currentLine = this.currentLine + 1;
+    this.currentLine += 1;
 
     console.log(`${chalk.green('Stored new Journal header for')} ${chalk.magenta(path.basename(this.currentJournal))}`);
 
@@ -762,7 +761,7 @@ class EliteDangerousJournalServer {
         }
 
         // increment line coutner so we know where we are in the content
-        this.currentLine = this.currentLine + 1;
+        this.currentLine += 1;
 
         // broadcast entry to clients if we aren't supposed to mute it
         if (!mute) {

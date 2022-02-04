@@ -129,7 +129,6 @@ const ERROR_INVALID_PAYLOAD_MSG = 'Server does not accept payload';
  */
 const ERROR_INVALID_PAYLOAD_CODE = 400;
 
-
 /**
  * Name of Journal Event that first gives us the CMDR name
  * @type {String}
